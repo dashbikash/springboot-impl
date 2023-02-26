@@ -1,0 +1,35 @@
+server:
+  port: 0
+  
+spring:
+  application:
+    name: service-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      routes:
+      - id: service-1
+        uri: lb://SERVICE-1
+        predicates:
+        - Path= /service1/**
+        filters:
+        - StripPrefix=1
+      - id: service-2
+        uri: lb://SERVICE-2
+        predicates:
+        - Path= /service2/**
+        filters:
+        - StripPrefix=1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+eureka:
+  client:
+    service-url:
+      default-zone: ${EUREKA_URI:http://localhost:8671/eureka}
+  instance:
+    prefer-ip-address: true
