@@ -1,0 +1,18 @@
+management:
+  endpoints.web.exposure.include:
+    - '*'
+  endpoint.health.show-details: always
+  health.circuitbreakers.enabled: true
+  
+resilience4j.circuitbreaker:
+    configs:
+        default:
+            slidingWindowSize: 100
+            permittedNumberOfCallsInHalfOpenState: 10
+            waitDurationInOpenState: 10000
+            failureRateThreshold: 60
+            eventConsumerBufferSize: 10
+            registerHealthIndicator: true
+        someShared:
+            slidingWindowSize: 50
+            permittedNumberOfCallsInHalfOpenState: 10
