@@ -1,0 +1,76 @@
+openapi: "3.0.0"
+info:
+  title: SpringOpenAPI
+  version: 1.0.0
+  contact: {}
+security: []
+servers: []
+paths:
+  /employee/{id}:
+    get:
+      summary: Employee by ID
+      operationId: getEmployeeById
+      tags:
+        - employees
+      description: ''
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+  /employee:
+    get:
+      summary: Employee List
+      operationId: getEmployeeList
+      tags:
+        - employees
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: Employee List
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeList'
+components:
+  links: {}
+  callbacks: {}
+  schemas:
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+        lname:
+          type: string
+        email:
+          type: string
+        age:
+          type: integer
+        experience:
+          type: decimal
+        salary:
+          type: decimal
+        fname:
+          type: string
+        gender:
+          type: string
+        phone:
+          type: string
+        job_title:
+          type: string
+        department:
+          type: string
+    EmployeeList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Employee'
