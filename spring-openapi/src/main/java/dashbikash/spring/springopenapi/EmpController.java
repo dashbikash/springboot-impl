@@ -14,7 +14,7 @@ import dashbikash.spring.springopenapi.api.EmployeeApi;
 import dashbikash.spring.springopenapi.model.Employee;
 
 @RestController
-public class ApiController implements EmployeeApi{
+public class EmpController implements EmployeeApi{
 	@Value("classpath:data/employee.json")
 	Resource resourceFile;
 	
@@ -31,6 +31,7 @@ public class ApiController implements EmployeeApi{
 		return ResponseEntity.ok(this.getEmpList());
 	}
 	private List<Employee> getEmpList() throws Exception {
+		
 		return new ObjectMapper().readValue(resourceFile.getContentAsByteArray(),new TypeReference<List<Employee>>() {
 		});
 	}
