@@ -17,13 +17,13 @@ import org.springframework.messaging.MessageChannel;
 @Configuration
 @EnableAutoConfiguration
 public class IntegrationConfig {
+//	@Bean
+//	public MessageChannel fileChannel() {
+//		return new DirectChannel();
+//	}
+//	
 	@Bean
-	public MessageChannel filChannel() {
-		return new DirectChannel();
-	}
-	
-	@Bean
-	@InboundChannelAdapter(value = "filChannel",poller = @Poller(fixedDelay = "1000"))
+	@InboundChannelAdapter(value = "fileChannel",poller = @Poller(fixedDelay = "1000"))
 	public FileReadingMessageSource fileReadingMessageSource() {
 		FileReadingMessageSource readingMessageSource=new FileReadingMessageSource();
 		readingMessageSource.setDirectory(new File(System.getenv("HOME")+"/tmp/source"));
@@ -32,7 +32,7 @@ public class IntegrationConfig {
 		return readingMessageSource;
 	}
 	@Bean
-	@ServiceActivator(inputChannel =  "filChannel")
+	@ServiceActivator(inputChannel =  "fileChannel")
 	public FileWritingMessageHandler fileWritingMessageHandler() {
 		FileWritingMessageHandler writingMessageHandler=new FileWritingMessageHandler(new File(System.getenv("HOME")+"/tmp/destination"));
 		writingMessageHandler.setAutoCreateDirectory(true);
