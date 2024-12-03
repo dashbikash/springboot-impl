@@ -23,8 +23,7 @@ dependencies {
 	implementation 'org.springframework.integration:spring-integration-file'
 	implementation 'org.springframework.integration:spring-integration-http'
 
-	implementation 'org.springframework.integration:spring-integration-zookeeper'
-    implementation 'org.apache.zookeeper:zookeeper:3.6.3'
+	implementation 'org.apache.curator:curator-recipes:5.2.0'
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.integration:spring-integration-test'
