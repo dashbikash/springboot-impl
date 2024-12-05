@@ -1,6 +1,8 @@
 package dashbikash.spring_integration;
 
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -20,6 +22,8 @@ import org.springframework.integration.http.config.EnableIntegrationGraphControl
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
+import jakarta.annotation.PreDestroy;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +32,9 @@ import java.util.Map;
 @EnableAutoConfiguration
 @EnableIntegrationGraphController(allowedOrigins = {"*"})
 public class IntegrationConfig {
+	
+	 private static final Logger LOG = LoggerFactory.getLogger(IntegrationConfig.class);
+
 	
 	@Bean
     public MessageChannel fileInputChannel() {
@@ -59,7 +66,7 @@ public class IntegrationConfig {
 		readingMessageSource.setDirectory(new File(SOURCE_DIR));
 		readingMessageSource.setAutoCreateDirectory(true);
 		CompositeFileListFilter<File> compositeFileListFilter=new CompositeFileListFilter<>();
-		compositeFileListFilter.addFilter(new SimplePatternFileListFilter("*.txt"));
+		compositeFileListFilter.addFilter(new SimplePatternFileListFilter("*.csv"));
 		compositeFileListFilter.addFilter(existFilter);
 		
 		readingMessageSource.setFilter(compositeFileListFilter);
@@ -75,6 +82,7 @@ public class IntegrationConfig {
                 lock.acquire();
                 // Process the file
                 File inputFile = (File) message.getPayload();
+                LOG.info(inputFile.getCanonicalPath());
                 // Add your file processing logic here
                 Thread.sleep(10000);
                 // Pass the message to the output channel for writing
@@ -84,10 +92,11 @@ public class IntegrationConfig {
                 e.printStackTrace();
             } finally {
                 try {
-                    lock.release();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+					lock.release();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
         };
     }
@@ -119,6 +128,17 @@ public class IntegrationConfig {
         });
 		return server;
 	}
+	
+	@PreDestroy
+    public void releaseLockOnShutdown() {
+        try {
+            if (lock.isAcquiredInThisProcess()) {
+                lock.release();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 	
 	
