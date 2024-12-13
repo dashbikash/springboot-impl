@@ -17,6 +17,7 @@ import org.springframework.integration.file.FileReadingMessageSource;
 import org.springframework.integration.file.FileWritingMessageHandler;
 import org.springframework.integration.file.filters.CompositeFileListFilter;
 import org.springframework.integration.file.filters.SimplePatternFileListFilter;
+import org.springframework.integration.file.support.FileExistsMode;
 import org.springframework.integration.file.transformer.FileToStringTransformer;
 import org.springframework.integration.graph.IntegrationGraphServer;
 import org.springframework.integration.http.config.EnableIntegrationGraphController;
@@ -27,6 +28,9 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64.Encoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +51,12 @@ public class IntegrationConfig {
 	@Autowired
 	private FileNotExistFilter existFilter;
 
-	private static final String CHANNEL_FILE_INPUT = "fileInputChannel";
-	private static final String CHANNEL_FILE_PROCESS = "fileProcessingChannel";
-	private static final String CHANNEL_FILE_OUTPUT = "fileOutputChannel";
+	private static final String FILE_IN_CHANNEL = "fileInChannel";
+	private static final String FILE_SPLIT_CHANNEL = "splitFileChannel";
+	private static final String FILE_OUTPUT_CHANNEL = "fileOutputChannel";
 
 	@Bean
-	@InboundChannelAdapter(value = CHANNEL_FILE_INPUT,poller = @Poller(fixedDelay = "2000"))
+	@InboundChannelAdapter(value = FILE_IN_CHANNEL,poller = @Poller(fixedDelay = "2000"))
 	public FileReadingMessageSource fileReadingMessageSource() {
 		FileReadingMessageSource readingMessageSource=new FileReadingMessageSource();
 		readingMessageSource.setDirectory(new File(SOURCE_DIR));
@@ -66,29 +70,31 @@ public class IntegrationConfig {
 		return readingMessageSource;
 	}
 	
-	 @Splitter(inputChannel = "fileInputChannel", outputChannel = "splitFileChannel")
+	@Splitter(inputChannel = FILE_IN_CHANNEL, outputChannel = FILE_SPLIT_CHANNEL)
     public List<String> splitFile(Message<File> message) throws Exception {
         File file = message.getPayload();
-        String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-        // Split the file content by lines
-        return List.of(content.split("\\r?\\n"));
+        
+        return Files.readLines(file,Charsets.UTF_8);
     }
 
-	@Transformer(inputChannel = CHANNEL_FILE_INPUT,outputChannel = CHANNEL_FILE_OUTPUT)
-    public String transform(Message<File> message) throws Exception{
-        File file = message.getPayload();
-        
+	@Transformer(inputChannel = FILE_SPLIT_CHANNEL,outputChannel = FILE_OUTPUT_CHANNEL)
+    public byte[] transform(Message<List<String>> message) throws Exception{
+		List<String> lines = message.getPayload();
+		
         // Perform your transformation logic here
-        return  Files.toString(file, Charsets.UTF_8).toUpperCase();
+        return String.join("\n", lines.parallelStream().map(String::toUpperCase).toList()).getBytes();
     }
 
 
 	@Bean
-	@ServiceActivator(inputChannel =  CHANNEL_FILE_OUTPUT)
+	@ServiceActivator(inputChannel =  FILE_OUTPUT_CHANNEL)
 	public FileWritingMessageHandler fileWritingMessageHandler() {
 		FileWritingMessageHandler writingMessageHandler=new FileWritingMessageHandler(new File(DESTINATION_DIR));
 		writingMessageHandler.setAutoCreateDirectory(true);
 		writingMessageHandler.setExpectReply(false);
+		writingMessageHandler.setFileExistsMode(FileExistsMode.APPEND); // Ensure lines are appended to the file
+		writingMessageHandler.setAppendNewLine(true); // Ensure each line is written on a new line
+
 		
 		return writingMessageHandler;
 	}
